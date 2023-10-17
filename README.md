@@ -4,46 +4,46 @@
 
 To develop an LSTM-based model for recognizing the named entities in the text.
 
-## Problem Statement and Dataset
-We aim to develop an LSTM-based neural network model using Bidirectional Recurrent Neural Networks for recognizing the named entities in the text. The dataset used has a number of sentences, and each words have their tags. We have to vectorize these words using Embedding techniques to train our model.Bidirectional Recurrent Neural Networks connect two hidden layers of opposite directions to the same output.
+## Problem Statement :
+![WhatsApp Image 2023-10-10 at 11 14 43_f786f442](https://github.com/ManojTella/named-entity-recognition/assets/94883876/007901be-9820-40e2-81bd-079911bb71a1)
 
-![dl6](https://github.com/nithin-popuri7/named-entity-recognition/assets/94154780/d58dd7fc-b7cf-4b9f-8704-b4a30056d6d8)
-
-
-## Neural Network Model
-![image](https://github.com/nithin-popuri7/named-entity-recognition/assets/94154780/b861a6b4-a71c-4efe-9326-1058b1dfb47c)
+Named-entity recognition (NER) (also known as entity identification, entity chunking and entity extraction) is a subtask of information extraction that seeks to locate and classify named entities mentioned in unstructured text into pre-defined categories such as person names, organisations, locations, medical codes, time expressions, quantities, monetary values, percentages, etc.  It adds a wealth of semantic knowledge to your content and helps you to promptly understand the subject of any given text.
 
 
 
 ## DESIGN STEPS
-
 ### STEP 1:
-Import the necessary packages.
+Download and load the dataset to colab.
 
 ### STEP 2:
-Read the dataset and fill the null values using forward fill.
+ we would use aa Class which would convert every sentence with its named entities (tags) into a list of tuples [(word, named entity), 
 
 ### STEP 3:
-Create a list of words and tags. Also find the number of unique words and tags in the dataset.
+ create word-to-index and index-to-word mapping which is necessary for conversions for words before training.
 
 ### STEP 4:
-Create a dictionary for the words and their Index values. Repeat the same for the tags as well.
+Split the data into train and test.
 
 ### STEP 5:
-We done this by padding the sequences and also to acheive the same length of input data.
+Designing our Bidriectional LSTM  neural network model
 
 ### STEP 6:
-We build the model using Input, Embedding, Bidirectional LSTM, Spatial Dropout, Time Distributed Dense Layers.
+Train the model with training data
 
 ### STEP 7:
-We compile the model to fit the train sets and validation sets.
+Evaluate the model with mertics
+
+### STEP 8:
+Plot the graph of accuracy and Loss.
+
+
 
 ## PROGRAM
+
 ```
-Developed By:S.Harish Kumar
-Reg.No:212221230104
-```
-```
+Name: S.Harish Kumar.
+Roll No: 212221230104.
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -52,9 +52,10 @@ from sklearn.model_selection import train_test_split
 from keras import layers
 from keras.models import Model
 data = pd.read_csv("ner_dataset.csv", encoding="latin1")
-data.head(45)
+data.head(50)
+
 data = data.fillna(method="ffill")
-data.head(45)
+data.head(50)
 print("Unique words in corpus:", data['Word'].nunique())
 print("Unique tags in corpus:", data['Tag'].nunique())
 words=list(data['Word'].unique())
@@ -82,6 +83,8 @@ class SentenceGetter(object):
             return s
         except:
             return None
+            
+ 
 getter = SentenceGetter(data)
 sentences = getter.sentences
 len(sentences)
@@ -92,12 +95,11 @@ word2idx
 plt.hist([len(s) for s in sentences], bins=50)
 plt.show()
 X1 = [[word2idx[w[0]] for w in s] for s in sentences]
+
 type(X1[0])
 X1[0]
-max_len = 45
-```
-### Padding
-```
+max_len = 50
+
 nums = [[1], [2, 3], [4, 5, 6]]
 sequence.pad_sequences(nums)
 nums = [[1], [2, 3], [4, 5, 6]]
@@ -105,37 +107,47 @@ sequence.pad_sequences(nums,maxlen=2)
 X = sequence.pad_sequences(maxlen=max_len,
                   sequences=X1, padding="post",
                   value=num_words-1)
+                  
 X[0]
 y1 = [[tag2idx[w[2]] for w in s] for s in sentences]
 y = sequence.pad_sequences(maxlen=max_len,
                   sequences=y1,
                   padding="post",
                   value=tag2idx["O"])
-X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.2, random_state=1)
-X_train[0]
-y_train[0]
-input_word = layers.Input(shape=(max_len,))
-embedding_layer= layers.Embedding(input_dim=num_words,output_dim=50,input_length=max_len)(input_word)
+                  
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                    test_size=0.2, random_state=1)
+                                                   
+ X_train[0]
+ y_train[0]
+ input_word = layers.Input(shape=(max_len,))
+embedding_layer=layers.Embedding(input_dim=num_words,output_dim=50,input_length=max_len)(input_word)
 dropout_layer=layers.SpatialDropout1D(0.1)(embedding_layer)
-bidirectional_lstm=layers.Bidirectional(layers.LSTM(units=100,return_sequences=True,recurrent_dropout=0.1))(dropout_layer)
-output=layers.TimeDistributed(layers.Dense(num_tags,activation="softmax"))(bidirectional_lstm)              
+bidirectional_lstm=layers.Bidirectional(
+    layers.LSTM(units=100,return_sequences=True,
+                recurrent_dropout=0.1))(dropout_layer)
+output=layers.TimeDistributed(
+      layers.Dense(num_tags,activation="softmax"))(bidirectional_lstm)
 model = Model(input_word, output)
 model.summary()
 model.compile(optimizer="adam",
               loss="sparse_categorical_crossentropy",
               metrics=["accuracy"])
-history = model.fit(
+              
+ history = model.fit(
     x=X_train,
     y=y_train,
     validation_data=(X_test,y_test),
-    batch_size=30, 
+    batch_size=32, 
     epochs=3,
 )
+
+
 metrics = pd.DataFrame(model.history.history)
 metrics.head()
 metrics[['accuracy','val_accuracy']].plot()
 metrics[['loss','val_loss']].plot()
-i = 29
+i = 20
 p = model.predict(np.array([X_test[i]]))
 p = np.argmax(p, axis=-1)
 y_true = y_test[i]
@@ -143,19 +155,26 @@ print("{:15}{:5}\t {}\n".format("Word", "True", "Pred"))
 print("-" *30)
 for w, true, pred in zip(X_test[i], y_true, p[0]):
     print("{:15}{}\t{}".format(words[w-1], tags[true], tags[pred]))
+    
 ```
+
 ## OUTPUT
-
-### Training Loss, Validation Loss Vs Iteration Plot
-![dl6 1](https://github.com/nithin-popuri7/named-entity-recognition/assets/94154780/1133db21-1beb-4e9d-9084-a8dab40c36e5)
-
-![image](https://github.com/nithin-popuri7/named-entity-recognition/assets/94154780/ad3e7934-a0dc-4373-a05e-591ab0649cf2)
+### Summary:
+![image](https://github.com/ManojTella/named-entity-recognition/assets/94883876/5503a33e-3428-4c7f-a59a-233ae0dc2890)
 
 
+### Training Loss, Validation Loss Vs Iteration Plot:
 
-### Sample Text Prediction
-![image](https://github.com/nithin-popuri7/named-entity-recognition/assets/94154780/ed85775b-a741-4d2b-9641-3fc19b6c4d9a)
+![image](https://github.com/ManojTella/named-entity-recognition/assets/94883876/9da9b98d-1fa4-4a5b-a663-be3b45bbca63)
+
+
+![image](https://github.com/ManojTella/named-entity-recognition/assets/94883876/6d1e73b0-bc3c-4d79-b3e8-b99649e8e63a)
+
+
+### Sample Text Prediction:
+![image](https://github.com/ManojTella/named-entity-recognition/assets/94883876/71ec60c3-3a83-42a2-9aa1-828d6dc93d7d)
+
 
 
 ## RESULT
-Thus an LSTM-based model for recognizing the named entities in the text was successfully developed.
+Thus, an LSTM-based model for recognizing the named entities in the text is developed.
